@@ -1,44 +1,44 @@
 import os
 from pathlib import Path
 
-from preprocess import padding, organize_folders, clean_data
-from annotation import core_based, color_march, annotate_ddf
+from preprocess import ddf_pre as pre
+from annotation import ddf_anno as anno
 
-from data_augmentation import aug_in_lab
+from data_augmentation import ddf_aug as aug
 from classification import run_unet
 from deblurring import deblur, overlap4mask, overlap4conf, extract_exp, latest_exp_folder
 
 from visualization import display_as_gallery, convert_ddf_to_image
-import ipdb
+import ipdb 
 
 exp_path = Path("classification/exp")
 data_path = Path("data")
 
 
-def pre():
-    print("preprocess ...")
+# def pre():
+#     print("preprocess ...")
     
-    organize_folders(data_path)
+#     organize_folders(data_path)
     
-    clean_data(data_path)
+#     clean_data(data_path)
     
-def anno():
-    print("auto annotatioin ...")
-    # train_data = os.path.join(data_path, "train")
-    # val_data = os.path.join(data_path, "val")
+# def anno():
+#     print("auto annotatioin ...")
+#     # train_data = os.path.join(data_path, "train")
+#     # val_data = os.path.join(data_path, "val")
     
-    # ddf padding already done during anno
-    annotate_ddf(data_path/"train"); annotate_ddf(data_path/"val")
+#     # ddf padding already done during anno
+#     annotate_ddf(data_path/"train"); annotate_ddf(data_path/"val")
     
-def aug():
-    print("data augmentation ...")
+# def aug():
+#     print("data augmentation ...")
     
-    # aa padding only
-    padding(data_path/"train")
-    padding(data_path/"val")
+#     # aa padding only
+#     padding(data_path/"train")
+#     padding(data_path/"val")
     
-    aug_in_lab(data_path/"train")
-    aug_in_lab(data_path/"val")
+#     aug_in_lab(data_path/"train")
+#     aug_in_lab(data_path/"val")
     
 def classify():
     print("classification ...")
@@ -79,18 +79,23 @@ def vis():
 
 if __name__ == "__main__":
     
-    # pre()
+    pre(data_path)
     
-    # anno()
+    # interface 1
     
-    # aug()
+    # anno(data_path)
     
+    # # interface 2
     
-    classify()
+    # aug(data_path)
     
-    # debl()
+    # # interface 3
     
-    vis()
+    # classify()
+    
+    # # debl()
+    
+    # # vis()
     
     print("done!")
     
