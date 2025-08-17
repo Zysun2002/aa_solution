@@ -8,14 +8,16 @@ find core, perform color flooding, and find new proxy core from undefined pixels
 
 """
 
-def run(src_path, mask_path, confidence_path, output_path):
+def run(src_path, confidence_path, output_path):
 
     # parse
     shared["anti_32"] = anti_32 = np.array(Image.open(src_path).convert("RGB")).astype(np.float32)
-    # shared["aliased_64"] = aliased_64 = np.array(Image.open(high_img_path).convert("RGB")).astype(np.float32)
-    shared["mask"] = mask = np.array(Image.open(mask_path).convert("RGB")).astype(np.float32)
+
+    # three channel confidence, outlier, solid and 
     shared["confidence"] = confidence = np.array(Image.open(confidence_path).convert("RGB")).astype(np.float32)
-    
+    shared["mask"] = mask = hard_threshold_from_conf(confidence)
+
+    # ipdb.set_trace()
     shared["l"] = l = anti_32.shape[0]
 
     # unique_colors, color_indices = np.unique(aliased_64.reshape(-1, 3), axis=0, return_inverse=True)
@@ -53,7 +55,7 @@ def run(src_path, mask_path, confidence_path, output_path):
         for j in range(l):
             cur_pixel = Pixel_Container()
             # if np.all(mask[i, j] == (255, 0, 0)) or np.all(mask[i, j] == (255, 255, 255)):
-            if  np.all(mask[i, j] == (255, 255, 255)):
+            if  np.all(mask[i, j] == solid):
                 cur_pixel.color_core.add(tuple(anti_32[i, j]))
                 cur_pixel.color_dist[tuple(anti_32[i, j])] = 0
                 core[i, j] = core_type

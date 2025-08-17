@@ -5,23 +5,23 @@ import ipdb
 
 def organize_to_subfolders(data_path):
 
-    folder_32 = data_path/"32"
-    folder_64 = data_path/"64"
+    folder_l = data_path / "l"
+    folder_h = data_path / "h"
     
     output_root = data_path  # or any base path you want
 
-    # Process both "train" and "test" sets
+    # Process both "train" and "val" sets
     for split in ["train", "val"]:
-        path_32 = folder_32 / split
-        path_64 = folder_64 / split
+        path_l = folder_l / split
+        path_h = folder_h / split
         out_split = output_root / split
         out_split.mkdir(parents=True, exist_ok=True)
 
-        for img_32 in path_32.glob("*.png"):
-            name = img_32.stem  # e.g. "a", "b", etc.
+        for img_l in path_l.glob("*.png"):
+            name = img_l.stem  # e.g. "a", "b", etc.
 
-            img_64 = path_64 / f"{name}.png"
-            if not img_64.exists():
+            img_h = path_h / f"{name}.png"
+            if not img_h.exists():
                 continue
 
             # Create new subfolder in train/test/
@@ -29,29 +29,34 @@ def organize_to_subfolders(data_path):
             out_subdir.mkdir(exist_ok=True)
 
             # Copy and rename
-            shutil.copy(img_32, out_subdir / "anti_32.png")
-            shutil.copy(img_64, out_subdir / "aliased_64.png")
+            shutil.copy(img_l, out_subdir / "l.png")
+            shutil.copy(img_h, out_subdir / "h.png")
 
 
-    # Define paths to the two folders
 def merge_rename(folder_a, folder_b):
-    # Helper to remove "001-" prefix
-    def strip_prefix(filename):
-        match = re.match(r"^\d{3}-(.+)", filename)
-        return match.group(1) if match else filename
+    # Helper to remove "001-" prefix from STEM only
+    def strip_prefix(path_obj: Path):
+        stem, ext = path_obj.stem, path_obj.suffix
+        match = re.match(r"^\d{3}-(.+)", stem)
+        if match:
+            return match.group(1) + ext
+        else:
+            # Add marker to avoid matching with prefixed version accidentally
+            return "_noprefix_" + stem + ext
 
     # Step 1: Group by stripped base name
     def group_files(folder):
         groups = {}
         for f in folder.glob("*.png"):
-            base = strip_prefix(f.name)
+            base = strip_prefix(f)
             groups.setdefault(base, []).append(f)
         return groups
 
+    # ipdb.set_trace()
     grouped_a = group_files(folder_a)
     grouped_b = group_files(folder_b)
 
-    # Step 2: Find common keys (by base name after prefix)
+    # Step 2: Find common keys (by base name after prefix handling)
     common_keys = sorted(set(grouped_a) & set(grouped_b))
 
     # Step 3: Delete unmatched files
@@ -74,6 +79,9 @@ def merge_rename(folder_a, folder_b):
             suffix = f"{i+1}" if count > 1 else ""
             stem = Path(base).stem
             ext = Path(base).suffix
+            # Remove our _noprefix_ marker if present
+            if stem.startswith("_noprefix_"):
+                stem = stem[len("_noprefix_"):]
             new_base = f"{stem}{suffix}{ext}"
             prefix = f"{index:03d}-"
             new_name = prefix + new_base
@@ -92,21 +100,35 @@ def merge_rename(folder_a, folder_b):
 
             index += 1
 
+
 def delete_after_merge(data_path):
-    folder_32 = data_path/"32"
-    folder_64 = data_path/"64"
+    folder_l = data_path / "l"
+    folder_h = data_path / "h"
 
     # Delete the entire folder trees
-    if folder_32.exists():
-        shutil.rmtree(folder_32)
+    if folder_l.exists():
+        shutil.rmtree(folder_l)
 
-    if folder_64.exists():
-        shutil.rmtree(folder_64)
+    if folder_h.exists():
+        shutil.rmtree(folder_h)
+
 
 def main(data_path):
-    merge_rename(data_path/"l/train", data_path/"l/train")
-    merge_rename(data_path/"h/val", data_path/"h/val")
-    
+
+    merge_rename(data_path / "l/train", data_path / "h/train")
+
+    # ipdb.set_trace()
+
+    old_path = data_path / "l" / "test"
+    if old_path.is_dir():
+        old_path.rename(data_path / "l/val")
+
+    old_path = data_path / "h" / "test"
+    if old_path.is_dir():
+        old_path.rename(data_path / "h/val")
+
+    merge_rename(data_path / "l/val", data_path / "h/val")
+
     organize_to_subfolders(data_path)
     
     delete_after_merge(data_path)
@@ -115,4 +137,3 @@ def main(data_path):
 if __name__ == "__main__":
     data_path = Path("../data")
     main(data_path)
-    

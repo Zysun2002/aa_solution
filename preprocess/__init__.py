@@ -11,9 +11,18 @@ def ddf_pre(data_path):
     organize_folders_from_crossed_folders(data_path)
     
     clean_svg_without_backgrounds(data_path)
+
+    padding(data_path/"train", "aa.png", "padded_aa.png")
+    padding(data_path/"val", "aa.png", "padded_aa.png")
+
+
+
     
-def triClass_pre(data_path):
+def triCls_pre(data_path):
     organize_folders_from_two_resolutions(data_path)
     
-    padding(data_path/"train")
-    padding(data_path/"val")
+    padding(data_path/"train", "l.png", "padded_l.png")
+    padding(data_path/"train", "h.png", "padded_h.png")
+    
+    padding(data_path/"val", "l.png", "padded_l.png")
+    padding(data_path/"val", "h.png", "padded_h.png")

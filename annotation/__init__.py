@@ -10,3 +10,12 @@ def ddf_anno(data_path):
     # ddf padding already done during anno
     annotate_ddf(data_path/"train"); annotate_ddf(data_path/"val")
     
+def triCls_anno(data_path):
+    print("triCls annotatioin ...")
+    # train_data = os.path.join(data_path, "train")
+    # val_data = os.path.join(data_path, "val")
+    
+    core_based(data_path/"train"); core_based(data_path/"val")
+    color_march(data_path/"train"); color_march(data_path/"val")
+
+    

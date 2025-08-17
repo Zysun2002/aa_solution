@@ -4,15 +4,12 @@ import os
 from .main import run
 
 def batch(input_folder):
+    # subfolder-level
     
-    target_subdirs = []
-    
-    for subdir, _, files in os.walk(input_folder):
-        if 'mask_1_pred.png' in files:
-            target_subdirs.append(subdir)
+    for subfold in input_folder.glob('*'): # iterate through one depth
+        if subfold.is_dir():
+            run(subfold)
 
-    for subdir in tqdm(target_subdirs, bar_format="{n_fmt}/{total_fmt}"):
-            run(subdir)
             
 
 if __name__ == "__main__":

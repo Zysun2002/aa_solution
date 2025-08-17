@@ -5,6 +5,8 @@ from .pixel import *
 
 from collections import deque
 
+from pathlib import Path
+
 
 
 """
@@ -20,12 +22,17 @@ def run(low_img_path, high_img_path, output_path):
     anti_32 = np.array(Image.open(low_img_path).convert("RGB")).astype(np.float32)
     aliased_64 = np.array(Image.open(high_img_path).convert("RGB")).astype(np.float32)
     h, w = anti_32.shape[:2]
+
+
     # palette
     unique_colors, color_indices = np.unique(aliased_64.reshape(-1, 3), axis=0, return_inverse=True)
     palette = {tuple(color): idx for idx, color in enumerate(unique_colors)}
     inverse_palette = {v: k for k, v in palette.items()}
 
     annotation = np.full((h, w), -1)
+
+    save_annotation(annotation, "temp0.png")
+
 
     # add color components from aliased image   
     superpixel_image = []
@@ -69,9 +76,11 @@ def run(low_img_path, high_img_path, output_path):
                             np.all(anti_32[i, j] == aliased_64[2*i+1, 2*j+1]):
                             
                             annotation[i, j] = 0
-                            annotation[ni, nj] = 0
+                            annotation[ni, nj] = 0  # 0 represents solid
                             superpixel_image[i][j].label = solid
                             superpixel_image[ni][nj].label = solid
+
+    save_annotation(annotation, "temp.png")
 
     # propage color from solid to boudary pixel (to be optimized)
 
@@ -92,7 +101,6 @@ def run(low_img_path, high_img_path, output_path):
 
     # annotate boundary pixels by 4-neighbors search
 
-    save_annotation(annotation, "temp.png")
     # ipdb.set_trace()
     queue = deque()
 
@@ -102,6 +110,7 @@ def run(low_img_path, high_img_path, output_path):
             if cur_superpixel.label == solid: continue
             
             # init BFS
+            # ipdb.set_trace()
             color_roots = cur_superpixel.components.copy()
             mask = np.zeros((cfg.low_res, cfg.low_res, len(palette)))
             queue.clear()
@@ -142,9 +151,12 @@ def run(low_img_path, high_img_path, output_path):
 
 if __name__ == "__main__":
 
-    input_path = "/root/autodl-tmp/AA_deblurring/1-annotation/methods/color_march_v3/data/010-bee1"
+    # to run this directly:
+    # cd autodl-tmp
+    # python -m aa_solution.annotation.color_march_v2.main
 
-    low_img_path = os.path.join(input_path, "antialiased-32.png")
-    high_img_path = os.path.join(input_path, "aliased-64.png")
-    output_path = "res.png"
+    input_path = Path("/root/autodl-tmp/aa_solution/annotation/color_march_v2/002-archive")
+    low_img_path = input_path/"padded_l.png"
+    high_img_path = input_path/"padded_h.png"
+    output_path = input_path/"res.png"
     run(low_img_path, high_img_path, output_path)

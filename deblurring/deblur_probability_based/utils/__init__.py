@@ -9,6 +9,7 @@ import ipdb
 from .pixel import *
 from .pixel import solid, boundary, outlier
 from .pixel import search_nearby_cores
+from .pixel import hard_threshold_from_conf
 
 from .color import *
 

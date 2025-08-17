@@ -27,14 +27,14 @@ class MyDocument(Document):
 
             sub_folder = os.path.join(image_path, sub_path)
 
-            image_keys = ['anti_32', "aliased_64", 'path-based', 'diffusion-based', "soft mask", "deblurring"]
+            image_keys = ['anti-32', "aliased-64", 'path-based', 'core-based', "soft mask", "deblurring"]
             # image_keys = ['anti_32', "aliased_64"]
 
             image_paths = {
                 key: os.path.join(sub_folder, filename)
                 for key, filename in zip(image_keys, [
-                    'anti_32_padded.png',
-                    'aliased_64_padded',
+                    'padded_l.png',
+                    'padded_h.png',
                     'mask_color_march.png',
                     'mask_core_based.png',
                     'confidence',

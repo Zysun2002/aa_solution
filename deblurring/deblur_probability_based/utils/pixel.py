@@ -5,6 +5,15 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from ..shared import *
 
+import ipdb
+
+
+def hard_threshold_from_conf(conf):
+    hard_mask = np.argmax(conf, axis=-1)
+    
+    mapping = np.array([boundary, solid, outlier], dtype=int)
+    hard_mask = mapping[hard_mask]
+    return hard_mask
 
 def extend(region, shared):
     inverse_palette = shared["inverse_palette"]

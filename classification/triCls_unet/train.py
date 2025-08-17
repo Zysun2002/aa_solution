@@ -17,9 +17,9 @@ import ipdb
 
 import wandb
 from .evaluate import evaluate, save_train_masks
-from .unet import UNet, My_UNet, AttU_Net
+from .unet import UNet
 from .utils.data_loading import Clip_Art_Dataset, TinyClipArtDataset
-from .utils.dice_score import dice_loss, weighted_ddf_loss, ChamferDDLoss
+from .utils.dice_score import dice_loss, weighted_dice_loss, weighted_cross_entropy_loss
 # import .utils.config as config
 from .utils import config as config
 from .utils.save_exp import save_checkpoint, load_checkpoint
@@ -45,11 +45,6 @@ def train_model(
     
     
     train_set = Clip_Art_Dataset(train_data_path, cfg)
-    
-    # train_set = TinyClipArtDataset(train_data_path, cfg)
-    # val_set = TinyClipArtDataset(val_data_path, cfg)
-    
-    
     val_set = Clip_Art_Dataset(val_data_path, cfg)
 
 
@@ -91,28 +86,30 @@ def train_model(
                 images, masks_true = batch['image'], batch['mask']
                 images = images.to(device=device, dtype=torch.float32, memory_format=torch.channels_last)
                 
-                masks_true = masks_true.to(device=device, dtype=torch.float32)
+                masks_true = masks_true.to(device=device, dtype=torch.long)
 
                 with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=amp):
                     masks_pred = model(images)
                     
-                    entropy_loss = weighted_ddf_loss(masks_pred, masks_true)
+                    entropy_loss = criterion(masks_pred, masks_true)    # remove this loss term
+                
+                    weighted_loss = 2 * weighted_cross_entropy_loss(
+                        F.softmax(masks_pred, dim=1).float(),
+                        F.one_hot(masks_true, model.n_classes).permute(0, 3, 1, 2).float(),
+                        [1.0, 1.0, 100.]
+                    )
+                    
+                    Dice_loss = dice_loss(
+                        F.softmax(masks_pred, dim=1).float(),
+                        F.one_hot(masks_true, model.n_classes).permute(0, 3, 1, 2).float(),
+                        multiclass=True
+                    )   # # in the original codes
 
-                    # weighted_loss = 0.
-                    # Dice_loss = dice_loss(
-                    #     masks_pred.float(),
-                    #     masks_true.float(),
-                    #     multiclass=True
-                    # )  
-                    
-                    Dice_loss = 0
-                    
-                    # chamfer_f = ChamferDDLoss(threshold=0.998)
-                    # geo_loss, density_loss = chamfer_f(masks_pred, masks_true)
-                    
-                    geo_loss, density_loss = 0, 0
+                    # Dice_loss = 0
+                    # entropy_loss = 0
+                    # remove this loss term
 
-                    loss = entropy_loss + Dice_loss + geo_loss + density_loss
+                    loss = entropy_loss + weighted_loss + Dice_loss
 
                 optimizer.zero_grad(set_to_none=True)
                 grad_scaler.scale(loss).backward()
@@ -128,17 +125,17 @@ def train_model(
                 
                 
                 # logger.print(f"train    : {entropy_loss.item():4f} + {weighted_loss:4f} + {Dice_loss.item():4f} = {loss.item(): 4f}\n")
-                logger.print(f"train    : {entropy_loss:4f} + {Dice_loss:4f} + {geo_loss:4f} + {density_loss:4f} = {loss: 4f}\n")
+                logger.print(f"train    : {entropy_loss:4f} + {weighted_loss:4f} + {Dice_loss:4f}  = {loss: 4f}\n")
                 
-                if epoch % 500 == 0 or epoch == epochs:
+                if epoch % 200 == 0 or epoch == epochs:
                     save_train_masks(masks_pred, masks_true, epoch, batch["name"], cfg)
 
-            if epoch % 500 == 0 or epoch == epochs:
+            if epoch % 200 == 0 or epoch == epochs:
                 val_score = evaluate(model, val_loader, device, amp, epoch, cfg)
                 # scheduler.step(val_score)
 
 
-            if epoch % 500 == 0:
+            if epoch % 200 == 0:
                 save_checkpoint(model, optimizer, scheduler, grad_scaler, epoch, cfg)
 
     cfg.exp_path.rename(cfg.exp_path.with_name(cfg.exp_path.name + "-FINISHED"))  # change the folder name here
@@ -162,7 +159,7 @@ def get_args(arg_list=None):
                         help='Percent of the data that is used as validation (0-100)')
     parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision')
     parser.add_argument('--bilinear', action='store_true', default=False, help='Use bilinear upsampling')
-    parser.add_argument('--n_classes', '-c', type=int, default=2, help='Number of classes')
+    parser.add_argument('--n_classes', '-c', type=int, default=3, help='Number of classes')
     parser.add_argument('--exp_path', type=str, default="exp")
     parser.add_argument('--exp_name', type=str, default="default")
 

@@ -11,7 +11,7 @@ def extract(exp_path, data_path):
     # exp_val_path = os.path.join(latest_exp_folder(exp_path), "val_final")
     data_path = os.path.join(data_path, "val")
     
-    image_names = ['confidence.png', 'mask.png']
+    image_names = ['confidence.png']
     
     for subfolder_name in os.listdir(exp_path):
         subexp_path = os.path.join(exp_path, subfolder_name)
@@ -35,6 +35,7 @@ def latest_exp_folder(exp_path, stage_name):
     latest_folder = None
     latest_time = None
 
+    # ipdb.set_trace()
     # Traverse date directories (MM-DD format)
     for date_dir in exp_path.iterdir():
         if not date_dir.is_dir():
@@ -60,7 +61,7 @@ def latest_exp_folder(exp_path, stage_name):
                 latest_time = dt
                 latest_folder = exp_dir
 
-    
+    # ipdb.set_trace()
     train_folders = [f for f in latest_folder.iterdir() 
                     if f.is_dir() and f.name.startswith(f'{stage_name}_')]
     

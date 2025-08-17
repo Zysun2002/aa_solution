@@ -75,12 +75,26 @@ def run(aa_path, output_aa_path):
 #     padded_img1.save(output_64_path)
 #     padded_img2.save(output_32_path)
     
-def batch(input_folder):
+# def batch(input_folder, input_name, output_name):
+
+#     for subdir in tqdm(input_folder.glob('*')):
+#             aa_path = subdir / "aa.png"
+#             # ddf_path = subdir / "ddf.npy"
+#             padded_aa_path = subdir / "padded_aa.png"
+#             # padded_ddf_path = subdir / "padded_ddf.npy"
+#             run(aa_path, padded_aa_path)    
+
+def batch(input_folder, input_name, output_name):
 
     for subdir in tqdm(input_folder.glob('*')):
-            aa_path = subdir / "aa.png"
+            
+        
+            aa_path = subdir / input_name
+
+            if not aa_path.is_file():
+                continue # this is necessary for robutness
             # ddf_path = subdir / "ddf.npy"
-            padded_aa_path = subdir / "padded_aa.png"
+            padded_aa_path = subdir / output_name
             # padded_ddf_path = subdir / "padded_ddf.npy"
             run(aa_path, padded_aa_path)
 

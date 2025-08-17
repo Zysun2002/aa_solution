@@ -28,28 +28,39 @@ class Clip_Art_Dataset:
         self.mask_paths = []
         self.names = []
         
+        # modualize here
         for subfolder in data_path.iterdir():
             
-            aug_path = subfolder / "aug"
+            aug_path = subfolder / "aug" / "aug_core_based"
 
             for aug_sub in aug_path.iterdir():
                 self.img_paths.append(aug_sub / "image.png") 
-                self.mask_paths.append(aug_sub / "gt.npy")
+                self.mask_paths.append(aug_sub / "mask.png")
                 self.names.append((subfolder.name, aug_sub.name))
 
-        # self.mask_values = [0, 1, 2]
+            aug_path = subfolder / "aug" / "aug_path_based"
+            for aug_sub in aug_path.iterdir():
+                self.img_paths.append(aug_sub / "image.png") 
+                self.mask_paths.append(aug_sub / "mask.png")
+                self.names.append((subfolder.name, aug_sub.name))
+
+        self.mask_values = [0, 1, 2]
 
         img = Image.open(self.img_paths[0]).convert('RGB')
         config.cfg.l = img.size[0]
         
     @staticmethod
     def preprocess(pil_img, is_mask):
+        w, h = pil_img.size
         img = np.asarray(pil_img)
 
         # return np.zeros((h, w), dtype=np.int64)
         if is_mask:
-            mask = img.transpose((2, 0, 1))
-            return mask
+            mask = np.zeros((w, h), dtype=np.int64)
+            mask[(img == [0, 0, 0]).all(-1)] = 0
+            mask[(img == [255, 255, 255]).all(-1)] = 1
+            mask[(img == [255, 0, 0]).all(-1)] = 2
+            return mask 
 
         else:
             img = img.transpose((2, 0, 1))
@@ -61,7 +72,7 @@ class Clip_Art_Dataset:
         mask_path = self.mask_paths[idx]
         # ipdb.set_trace()
         img = Image.open(img_path)
-        mask = np.load(mask_path)
+        mask = Image.open(mask_path)
 
         img = self.preprocess(img, is_mask=False)
         mask = self.preprocess(mask, is_mask=True)
@@ -106,7 +117,7 @@ class TinyClipArtDataset(Clip_Art_Dataset):
         mask_path = self.mask_paths[idx]
         
         img = Image.open(img_path)
-        mask = np.load(mask_path)
+        mask = Image.open(mask_path)
 
         img = self.preprocess(img, is_mask=False)
         mask = self.preprocess(mask, is_mask=True)
