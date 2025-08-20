@@ -4,14 +4,13 @@ import os
 from .main import run
 
 def batch(input_folder):
-    target_subdirs = []
+    # target_subdirs = []
 
-    for subdir, _, files in os.walk(input_folder):
-        if 'padded_l.png' in files:
-            target_subdirs.append(subdir)
+    subfold_path_list = sorted(input_folder.iterdir())
 
-    for subdir in tqdm(target_subdirs, bar_format="{n_fmt}/{total_fmt}"):
-            # print(subdir)
+    for subdir in tqdm(subfold_path_list, bar_format="{n_fmt}/{total_fmt}"):
+            print("")
+            print(subdir)
             input_path_img_32 = os.path.join(subdir, 'padded_l.png')
             input_path_img_64 = os.path.join(subdir, 'padded_h.png')
             output_path = os.path.join(subdir, 'mask_core_based.png')

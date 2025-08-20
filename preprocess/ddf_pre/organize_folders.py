@@ -97,7 +97,6 @@ def merge_svg_png(folder_a: Path, folder_b: Path):
                 old.rename(folder_b / new_name)
 
             index += 1
-
 def delete_after_merge(path):
     if path.exists():
         shutil.rmtree(path)

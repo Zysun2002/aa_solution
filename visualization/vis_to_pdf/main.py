@@ -1,5 +1,6 @@
 import os
-from pylatex import *
+import ipdb
+from pylatex import * 
 
 class MyDocument(Document):
     def __init__(self, output_path):
@@ -15,6 +16,8 @@ class MyDocument(Document):
             Package('subcaption'), 
             Package('float')
         ])
+        
+        self.packages.append(Command('usepackage', 'svg'))
 
         self.append(NoEscape(r"\maketitle"))
         self.append(NoEscape(r'\newpage'))
@@ -23,21 +26,19 @@ class MyDocument(Document):
 
     def fill_document(self, image_path, doc):
 
-        for sub_path in sorted(os.listdir(image_path)):
+        for sub_path in sorted([p for p in image_path.iterdir() if p.is_dir()]):
 
-            sub_folder = os.path.join(image_path, sub_path)
-
-            image_keys = ['anti-32', "aliased-64", 'path-based', 'core-based', "soft mask", "deblurring"]
+            image_keys = ['anti-32', "aliased-64", "vec", "soft mask", "deblurring"]
             # image_keys = ['anti_32', "aliased_64"]
 
             image_paths = {
-                key: os.path.join(sub_folder, filename)
+                key: sub_path / filename
                 for key, filename in zip(image_keys, [
                     'padded_l.png',
                     'padded_h.png',
-                    'mask_color_march.png',
-                    'mask_core_based.png',
-                    'confidence',
+                    # 'mask_color_march.png',
+                    'vec.svg',
+                    'confidence.png',
                     'res.png' 
                 ])
             }
@@ -47,24 +48,41 @@ class MyDocument(Document):
                     with doc.create(
                         SubFigure(position="b", width=NoEscape(r"0.32\linewidth"))
                     ) as subfig:
-                        subfig.add_image(image_paths[key], width=NoEscape(r"\linewidth"))
+                        # ipdb.set_trace()
+                        if image_paths[key].suffix == '.svg':
+                            # ipdb.set_trace()
+                            idx = sub_path.name[:3]
+                            vec_name = idx + "_" + image_paths[key].name
+                            vec_path = str(image_paths[key].with_name(vec_name))
+                            subfig.append(NoEscape(
+                                rf"\includesvg[width=\linewidth]{{{vec_path}}}"
+                            ))
+                        else:
+                            # Normal raster image
+                            subfig.add_image(str(image_paths[key]), width=NoEscape(r"\linewidth"))
+            
+                        # ipdb.set_trace()
                         subfig.add_caption(key)
                         
                     if (i+1) % 3 == 0:
                         doc.append(NoEscape(r"\par\vspace{1em}"))
 
-                name = sub_path
+                name = sub_path.name
                 images.add_caption(name[4:])
                 
                 self.count += 1
                 if self.count % 3 == 0:
                     self.append(NoEscape(r'\clearpage'))
-                    
+
 
 def display_as_gallery(image_path, output_path):
     doc = MyDocument(output_path)
     doc.fill_document(image_path, doc)
-    doc.generate_tex()
+    doc.generate_pdf(
+        clean_tex=False, 
+        compiler="pdflatex", 
+        compiler_args=["-shell-escape"]
+    )
        
 
 if __name__ == "__main__":

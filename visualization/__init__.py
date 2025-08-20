@@ -8,4 +8,4 @@ def triCls_vis(data_path):
     vis_path.mkdir(exist_ok=True)
 
     gallery_path = vis_path/"gallery"
-    display_as_gallery((data_path/"val").resolve(), str(gallery_path))
+    display_as_gallery((data_path/"val").resolve(), gallery_path)
